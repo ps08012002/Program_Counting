@@ -183,13 +183,13 @@ CREATE TABLE inspection_logs (
 Clone repository:
 
 ```bash
-git clone https://github.com/username/bottle-counting-api.git
+git clone https://github.com/ps08012002/Program_Counting.git
 ```
 
 Masuk ke folder project:
 
 ```bash
-cd bottle-counting-api
+cd Program_Counting
 ```
 
 ---

@@ -1,4 +1,6 @@
-/Dataset
 .env
-__pycache__/**/*
-
+.env.*
+venv/
+__pycache__/
+storage/
+*.pyc

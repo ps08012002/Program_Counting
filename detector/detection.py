@@ -10,19 +10,63 @@ class ProductDetector:
 
     def __init__(self):
 
+        model_path = os.getenv(
+            "YOLO_MODEL"
+        )
+
+        if not model_path:
+            raise RuntimeError(
+                "YOLO_MODEL not found in environment variables"
+            )
+
+        if not os.path.exists(
+            model_path
+        ):
+            raise FileNotFoundError(
+                f"Model not found: {model_path}"
+            )
+
+        confidence = os.getenv(
+            "YOLO_CONFIDENCE"
+        )
+
+        if not confidence:
+            raise RuntimeError(
+                "YOLO_CONFIDENCE not found in environment variables"
+            )
+
+        self.confidence = float(
+            confidence
+        )
+
         self.model = YOLO(
-            os.getenv("YOLO_MODEL")
+            model_path
         )
 
-    def detect(self, image_path):
-
-        results = self.model(
-            image_path,
-            conf=0.5
+        print(
+            f"[INFO] YOLO model loaded: {model_path}"
         )
 
-        count = len(
-            results[0].boxes
-        )
+    def detect(
+        self,
+        image_path
+    ):
 
-        return count, results
+        try:
+
+            results = self.model(
+                image_path,
+                conf=self.confidence
+            )
+
+            count = len(
+                results[0].boxes
+            )
+
+            return count, results
+
+        except Exception as e:
+
+            raise RuntimeError(
+                f"YOLO detection failed: {e}"
+            )

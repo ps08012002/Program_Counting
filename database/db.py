@@ -6,6 +6,22 @@ from dotenv import load_dotenv
 load_dotenv()
 
 
+required_env = [
+    "DB_HOST",
+    "DB_PORT",
+    "DB_USER",
+    "DB_PASSWORD",
+    "DB_NAME"
+]
+
+for env_var in required_env:
+
+    if not os.getenv(env_var):
+        raise RuntimeError(
+            f"{env_var} not found in environment variables"
+        )
+
+
 class Database:
 
     def __init__(self):
@@ -26,8 +42,16 @@ class Database:
         image_original,
         image_result,
         count,
-        status
+        status,
+        file_size_mb,
+        processing_time
     ):
+
+        self.conn.ping(
+            reconnect=True,
+            attempts=3,
+            delay=2
+        )
 
         sql = """
         INSERT INTO inspection_logs (
@@ -35,27 +59,42 @@ class Database:
             image_original,
             image_result,
             count,
-            status
+            status,
+            file_size_mb,
+            processing_time
         )
-        VALUES (%s, %s, %s, %s, %s)
+        VALUES (%s, %s, %s, %s, %s, %s, %s)
         """
 
-        self.cursor.execute(
-            sql,
-            (
-                username,
-                image_original,
-                image_result,
-                count,
-                status
+        try:
+
+            self.cursor.execute(
+                sql,
+                (
+                    username,
+                    image_original,
+                    image_result,
+                    count,
+                    status,
+                    file_size_mb,
+                    processing_time
+                )
             )
-        )
 
-        self.conn.commit()
+            self.conn.commit()
 
-        return self.cursor.lastrowid
+            return self.cursor.lastrowid
+
+        except Exception:
+
+            self.conn.rollback()
+
+            raise
 
     def close(self):
 
-        self.cursor.close()
-        self.conn.close()
+        if self.cursor:
+            self.cursor.close()
+
+        if self.conn:
+            self.conn.close()

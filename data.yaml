@@ -1,8 +1,0 @@
-path: C:\Web\Kosme-Computer-Vision\Dataset
-
-train: images/train
-val: images/val
-test: images/test
-
-names:
-  0: Produk

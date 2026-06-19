@@ -1,6 +1,19 @@
 import os
+import re
 
+from dotenv import load_dotenv
 from datetime import datetime
+
+load_dotenv()
+
+STORAGE_PATH = os.getenv(
+    "STORAGE_PATH"
+)
+
+if not STORAGE_PATH:
+    raise RuntimeError(
+        "STORAGE_PATH not found in environment variables"
+    )
 
 
 def create_storage_folder():
@@ -8,7 +21,7 @@ def create_storage_folder():
     now = datetime.now()
 
     base_folder = os.path.join(
-        "storage",
+        STORAGE_PATH,
         str(now.year),
         f"{now.month:02}",
         f"{now.day:02}"
@@ -37,22 +50,30 @@ def create_storage_folder():
     return original_folder, result_folder
 
 
-def generate_file_paths():
+def generate_file_paths(
+    username
+):
 
     original_folder, result_folder = (
         create_storage_folder()
     )
 
     timestamp = datetime.now().strftime(
-        "%Y%m%d_%H%M%S"
+        "%Y%m%d_%H%M%S_%f"
+    )
+
+    safe_username = re.sub(
+        r"[^a-zA-Z0-9_-]",
+        "",
+        username.strip().lower()
     )
 
     original_filename = (
-        f"{timestamp}_original.jpg"
+        f"{timestamp}_{safe_username}_original.jpg"
     )
 
     result_filename = (
-        f"{timestamp}_result.jpg"
+        f"{timestamp}_{safe_username}_result.jpg"
     )
 
     original_path = os.path.join(

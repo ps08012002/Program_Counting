@@ -10,46 +10,67 @@ from helpers.storage import generate_file_paths
 
 load_dotenv()
 
-EXPECTED_PRODUCTS = int(
-    os.getenv("EXPECTED_PRODUCTS")
+expected_products = os.getenv(
+    "EXPECTED_PRODUCTS"
 )
 
-USERNAME = "putra"
+if not expected_products:
+    raise RuntimeError(
+        "EXPECTED_PRODUCTS not found in environment variables"
+    )
+
+EXPECTED_PRODUCTS = int(
+    expected_products
+)
 
 detector = ProductDetector()
-
 db = Database()
 
 
-def main():
-
+def process_image(
+    image_path,
+    username
+):
     start_time = datetime.now()
 
-    image_path = "images/sample.jpg"
-
     original_path, result_path = (
-        generate_file_paths()
+        generate_file_paths(
+            username
+        )
     )
 
     #
-    # Simpan original
+    # READ IMAGE
     #
-    image = cv2.imread(image_path)
+    image = cv2.imread(
+        image_path
+    )
 
-    cv2.imwrite(
+    if image is None:
+        raise RuntimeError(
+            f"Failed to read image: {image_path}"
+        )
+
+    #
+    # SAVE ORIGINAL IMAGE
+    #
+    if not cv2.imwrite(
         original_path,
         image
-    )
+    ):
+        raise RuntimeError(
+            "Failed to save original image"
+        )
 
     #
-    # YOLO detect
+    # YOLO DETECTION
     #
     count, results = detector.detect(
         original_path
     )
 
     #
-    # Status
+    # STATUS
     #
     status = (
         "OK"
@@ -58,43 +79,108 @@ def main():
     )
 
     #
-    # Simpan result
+    # SAVE RESULT IMAGE
     #
     plotted = results[0].plot()
 
-    cv2.imwrite(
+    if not cv2.imwrite(
         result_path,
         plotted
+    ):
+        raise RuntimeError(
+            "Failed to save result image"
+        )
+
+    #
+    # FILE SIZE
+    #
+    original_size = os.path.getsize(
+        original_path
+    )
+
+    result_size = os.path.getsize(
+        result_path
+    )
+
+    file_size_mb = round(
+        (
+            original_size +
+            result_size
+        ) / 1024 / 1024,
+        2
     )
 
     #
-    # Simpan DB
+    # PROCESSING TIME
     #
-    inspection_id = db.save_log(
-        username=USERNAME,
-        image_original=original_path,
-        image_result=result_path,
-        count=count,
-        status=status
-    )
-
     processing_time = (
         datetime.now() - start_time
     ).total_seconds()
 
-    print("=" * 50)
-    print(f"Inspection ID : {inspection_id}")
-    print(f"Username      : {USERNAME}")
-    print(f"Count         : {count}")
-    print(f"Expected      : {EXPECTED_PRODUCTS}")
-    print(f"Status        : {status}")
-    print(f"Process Time  : {processing_time:.2f}s")
-    print(f"Original      : {original_path}")
-    print(f"Result        : {result_path}")
-    print("=" * 50)
+    #
+    # SAVE DATABASE LOG
+    #
+    inspection_id = db.save_log(
+        username=username,
+        image_original=original_path,
+        image_result=result_path,
+        count=count,
+        status=status,
+        file_size_mb=file_size_mb,
+        processing_time=processing_time
+    )
 
-    db.close()
+    #
+    # LOG
+    #
+    print("=" * 60)
+    print(
+        f"Inspection ID : {inspection_id}"
+    )
+    print(
+        f"Username      : {username}"
+    )
+    print(
+        f"File          : {os.path.basename(image_path)}"
+    )
+    print(
+        f"Count         : {count}"
+    )
+    print(
+        f"Expected      : {EXPECTED_PRODUCTS}"
+    )
+    print(
+        f"Status        : {status}"
+    )
+    print(
+        f"File Size     : {file_size_mb:.2f} MB"
+    )
+    print(
+        f"Process Time  : {processing_time:.2f}s"
+    )
+    print(
+        f"Original      : {original_path}"
+    )
+    print(
+        f"Result        : {result_path}"
+    )
+    print("=" * 60)
+
+    return {
+        "success": True,
+        "inspection_id": inspection_id,
+        "username": username,
+        "count": count,
+        "expected": EXPECTED_PRODUCTS,
+        "status": status,
+        "file_size_mb": file_size_mb,
+        "processing_time": processing_time,
+        "image_original": original_path,
+        "image_result": result_path
+    }
 
 
 if __name__ == "__main__":
-    main()
+    print(
+        "Gunakan endpoint API /detect untuk menjalankan proses deteksi."
+    )

@@ -1,7 +1,9 @@
 fastapi
-uvicorn
-ultralytics
-opencv-python
-mysql-connector-python
-python-dotenv
+uvicorn[standard]
 python-multipart
+python-dotenv
+opencv-python
+ultralytics
+mysql-connector-python
+numpy
+pillow
